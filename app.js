@@ -126,7 +126,6 @@
   async function loadWeddings() {
     const list = $("weddingList");
     const empty = $("emptyState");
-    list.innerHTML = "";
 
     const { data, error } = await db
       .from("weddings")
@@ -143,12 +142,14 @@
     const myId = me.user ? me.user.id : null;
 
     if (!data || data.length === 0) {
+      list.innerHTML = "";
       empty.hidden = false;
       empty.textContent = "No weddings yet. Create your first one to get started.";
       return;
     }
     empty.hidden = true;
 
+    list.innerHTML = ""; // clear here (after await) so overlapping calls can't double-append
     data.forEach((w) => {
       const item = document.createElement("div");
       item.className = "wedding-item";

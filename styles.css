@@ -37,6 +37,12 @@ body {
 .app { max-width: 1440px; margin: 0 auto; padding: 28px 22px; }
 /* keep reading-oriented views comfortable; let the floor plan use the full width */
 #guestsPanel { max-width: 1040px; }
+/* full-bleed: floor plan breaks out of the centered container to span the viewport */
+#floorPanel {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 0 24px;
+}
 
 .view.center {
   display: flex;
@@ -242,7 +248,7 @@ body {
 .gchip.kid { background: #e8e8e8; }
 
 .floor-canvas {
-  position: relative; flex: 1; min-height: 70vh;
+  position: relative; flex: 1; min-height: 80vh;
   background: var(--surface);
   background-image: radial-gradient(var(--border) 1px, transparent 1px);
   background-size: 22px 22px;
@@ -330,6 +336,7 @@ body {
   .checkrow-group { gap: 14px; flex-wrap: wrap; }
 
   /* floor plan stacks: guest pool on top, canvas below */
+  #floorPanel { padding: 0 10px; }
   .floor-toolbar { flex-wrap: wrap; }
   .zoom-controls { margin-left: 0; }
   .floor-layout { flex-direction: column; }
