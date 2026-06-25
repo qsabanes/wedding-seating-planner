@@ -63,6 +63,10 @@ body {
 }
 .login-card { width: 100%; max-width: 380px; }
 .login-card h2 { margin-top: 0; }
+.btn-google { width: 100%; background: #fff; color: var(--ink); border: 1px solid #cfcfcf; font-weight: 600; margin-bottom: 12px; }
+.btn-google:hover { background: #f7f7f7; }
+.or-divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .8rem; margin: 6px 0 12px; }
+.or-divider::before, .or-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
 .stack { display: flex; flex-direction: column; gap: 12px; }
 

@@ -118,6 +118,14 @@
     }
   });
 
+  $("googleBtn").addEventListener("click", async () => {
+    const { error } = await db.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.href.split("#")[0] },
+    });
+    if (error) alert("Google sign-in failed: " + error.message);
+  });
+
   $("signOutBtn").addEventListener("click", () => db.auth.signOut());
 
   // ============================================================

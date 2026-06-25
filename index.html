@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wedding Seating Planner</title>
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
   <header class="topbar">
@@ -25,6 +25,8 @@
     <section id="loginView" class="view center" hidden>
       <div class="card login-card">
         <h2>Sign in</h2>
+        <button id="googleBtn" class="btn btn-google" type="button">Continue with Google</button>
+        <div class="or-divider"><span>or</span></div>
         <p class="muted">Enter your email and we'll send you a one-time login link. No password needed.</p>
         <form id="loginForm" class="stack">
           <input id="emailInput" class="input" type="email" placeholder="you@example.com" required autocomplete="email" />
@@ -290,7 +292,7 @@
 
   <!-- Supabase client (CDN, no build step) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <script src="config.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
