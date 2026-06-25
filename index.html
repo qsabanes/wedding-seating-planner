@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wedding Seating Planner</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
   <header class="topbar">
@@ -49,7 +49,10 @@
       <div class="wv-head">
         <button id="backBtn" class="btn btn-ghost">← All weddings</button>
         <h2 id="wvTitle"></h2>
-        <button id="shareBtn" class="btn btn-ghost share-btn" type="button" hidden>＋ Share</button>
+        <div class="wv-head-actions">
+          <button id="printBtn" class="btn btn-ghost" type="button">Print / PDF</button>
+          <button id="shareBtn" class="btn btn-ghost" type="button" hidden>＋ Share</button>
+        </div>
       </div>
 
       <div class="wv-tabs">
@@ -282,9 +285,12 @@
     </div>
   </dialog>
 
+  <!-- Print / PDF output (hidden on screen, shown only when printing) -->
+  <div id="printArea"></div>
+
   <!-- Supabase client (CDN, no build step) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script src="config.js?v=2"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

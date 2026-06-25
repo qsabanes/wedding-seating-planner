@@ -250,6 +250,67 @@
   });
 
   // ============================================================
+  // PRINT / PDF
+  // ============================================================
+  $("printBtn").addEventListener("click", printPlan);
+  async function printPlan() {
+    const [tRes, aRes] = await Promise.all([
+      db.from("tables").select("*").eq("wedding_id", currentWedding.id).order("created_at"),
+      db.from("seat_assignments").select("*").eq("wedding_id", currentWedding.id),
+    ]);
+    const tables = tRes.data || [];
+    const assigns = aRes.data || [];
+    const seated = new Set(assigns.map((a) => a.guest_id));
+
+    const dateStr = currentWedding.event_date
+      ? new Date(currentWedding.event_date + "T00:00:00").toLocaleDateString(undefined,
+          { year: "numeric", month: "long", day: "numeric" })
+      : "";
+    const attending = guestCache.filter((g) => g.rsvp_status === "yes").length;
+    const kids = guestCache.filter((g) => g.is_child).length;
+    const dietary = {};
+    guestCache.forEach((g) => {
+      if (g.dietary) { const k = g.dietary.trim(); dietary[k] = (dietary[k] || 0) + 1; }
+    });
+
+    let html = "";
+    html += "<div class='print-header'><h1>" + escapeHtml(currentWedding.name) + "</h1>" +
+      (dateStr ? "<div>" + escapeHtml(dateStr) + "</div>" : "") + "</div>";
+    html += "<div class='print-summary'>" + guestCache.length + " guests · " + attending +
+      " attending · " + kids + " kids · " + seated.size + " seated</div>";
+    if (Object.keys(dietary).length) {
+      html += "<div class='print-diet'><strong>Dietary:</strong> " +
+        Object.entries(dietary).map(([k, v]) => escapeHtml(k) + " ×" + v).join(", ") + "</div>";
+    }
+
+    html += "<div class='print-tables'>";
+    tables.forEach((t) => {
+      const rows = assigns.filter((a) => a.table_id === t.id)
+        .sort((a, b) => (a.seat_index || 0) - (b.seat_index || 0));
+      html += "<div class='print-table'><h3>" + escapeHtml(t.label) +
+        " <span>(" + rows.length + "/" + t.seats + ")</span></h3><ol>";
+      rows.forEach((a) => {
+        const g = guestById(a.guest_id);
+        if (!g) return;
+        const extras = [g.is_child ? "kid" : "", g.dietary || ""].filter(Boolean).join(", ");
+        html += "<li>" + escapeHtml(g.name) +
+          (extras ? " <span class='ex'>(" + escapeHtml(extras) + ")</span>" : "") + "</li>";
+      });
+      html += "</ol></div>";
+    });
+    html += "</div>";
+
+    const unseated = guestCache.filter((g) => !seated.has(g.id));
+    if (unseated.length) {
+      html += "<div class='print-unseated'><h3>Unseated (" + unseated.length + ")</h3><div>" +
+        unseated.map((g) => escapeHtml(g.name)).join(", ") + "</div></div>";
+    }
+
+    $("printArea").innerHTML = html;
+    window.print();
+  }
+
+  // ============================================================
   // SHARING / COLLABORATORS
   // ============================================================
   const shareDialog = $("shareDialog");
