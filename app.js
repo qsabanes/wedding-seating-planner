@@ -84,8 +84,9 @@
       }
     } else {
       myUserId = null;
-      userArea.hidden = true;
+      unsubscribeRealtime();
       currentWedding = null;
+      userArea.hidden = true;
       showView("login");
     }
   }
@@ -203,6 +204,7 @@
     showTab("guests");
     loadGuests();
     loadConstraints();
+    subscribeRealtime();
   }
 
   async function loadConstraints() {
@@ -213,7 +215,35 @@
     if (!error) constraintsCache = data || [];
   }
 
+  // --- live sync (Supabase realtime) ---
+  let realtimeChannel = null;
+  let refreshTimer = null;
+  function subscribeRealtime() {
+    unsubscribeRealtime();
+    if (!currentWedding) return;
+    const filter = "wedding_id=eq." + currentWedding.id;
+    const tables = ["guests", "tables", "seat_assignments", "constraints"];
+    let ch = db.channel("wedding-" + currentWedding.id);
+    tables.forEach((t) => {
+      ch = ch.on("postgres_changes", { event: "*", schema: "public", table: t, filter }, scheduleRefresh);
+    });
+    realtimeChannel = ch.subscribe();
+  }
+  function unsubscribeRealtime() {
+    if (realtimeChannel) { db.removeChannel(realtimeChannel); realtimeChannel = null; }
+  }
+  function scheduleRefresh() {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      if (!currentWedding) return;
+      loadConstraints();
+      if (!$("guestsPanel").hidden) loadGuests();
+      if (!$("floorPanel").hidden) loadFloor();
+    }, 250);
+  }
+
   $("backBtn").addEventListener("click", () => {
+    unsubscribeRealtime();
     currentWedding = null;
     showView("dashboard");
     loadWeddings();

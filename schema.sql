@@ -178,3 +178,16 @@ drop policy if exists constraints_all on constraints;
 create policy constraints_all on constraints for all
   using (can_access_wedding(wedding_id))
   with check (can_access_wedding(wedding_id));
+
+-- ============================================================
+-- REALTIME (live sync between collaborators)
+-- Add tables to the realtime publication. Wrapped to ignore
+-- "already a member" errors so this stays re-runnable.
+-- ============================================================
+do $$
+begin
+  begin alter publication supabase_realtime add table guests; exception when duplicate_object then null; end;
+  begin alter publication supabase_realtime add table tables; exception when duplicate_object then null; end;
+  begin alter publication supabase_realtime add table seat_assignments; exception when duplicate_object then null; end;
+  begin alter publication supabase_realtime add table constraints; exception when duplicate_object then null; end;
+end $$;
