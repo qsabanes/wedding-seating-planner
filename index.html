@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wedding Seating Planner</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>💐 Seating Planner</h1>
+    <div id="userArea" class="user-area" hidden>
+      <span id="userEmail" class="user-email"></span>
+      <button id="signOutBtn" class="btn btn-ghost">Sign out</button>
+    </div>
+  </header>
+
+  <main id="app" class="app">
+    <!-- Loading -->
+    <section id="loadingView" class="view center">
+      <p class="muted">Loading…</p>
+    </section>
+
+    <!-- Login -->
+    <section id="loginView" class="view center" hidden>
+      <div class="card login-card">
+        <h2>Sign in</h2>
+        <p class="muted">Enter your email and we'll send you a one-time login link. No password needed.</p>
+        <form id="loginForm" class="stack">
+          <input id="emailInput" class="input" type="email" placeholder="you@example.com" required autocomplete="email" />
+          <button class="btn btn-primary" type="submit">Send me a link</button>
+        </form>
+        <p id="loginMsg" class="login-msg" hidden></p>
+      </div>
+    </section>
+
+    <!-- Dashboard -->
+    <section id="dashboardView" class="view" hidden>
+      <div class="dash-head">
+        <h2>Your weddings</h2>
+        <button id="newWeddingBtn" class="btn btn-primary">+ New wedding</button>
+      </div>
+      <div id="weddingList" class="wedding-list"></div>
+      <p id="emptyState" class="muted" hidden>No weddings yet. Create your first one to get started.</p>
+    </section>
+
+    <!-- Single wedding (guests) -->
+    <section id="weddingView" class="view" hidden>
+      <div class="wv-head">
+        <button id="backBtn" class="btn btn-ghost">← All weddings</button>
+        <h2 id="wvTitle"></h2>
+        <button id="shareBtn" class="btn btn-ghost share-btn" type="button" hidden>＋ Share</button>
+      </div>
+
+      <div class="wv-tabs">
+        <button id="tabGuests" class="tab active" type="button">Guests</button>
+        <button id="tabFloor" class="tab" type="button">Floor plan</button>
+      </div>
+
+      <div id="guestsPanel">
+      <div class="wv-toolbar">
+        <div id="guestStats" class="guest-stats"></div>
+        <div class="toolbar-actions">
+          <button id="importBtn" class="btn btn-ghost">Import CSV</button>
+          <button id="exportBtn" class="btn btn-ghost">Export</button>
+          <button id="addGuestBtn" class="btn btn-primary">+ Add guest</button>
+        </div>
+      </div>
+
+      <input id="guestTableSearch" class="input guest-search" type="search" placeholder="Search guests by name, group or side…" />
+
+      <div id="tableWrap" class="table-wrap">
+        <table class="guest-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Side</th><th>Group</th><th>RSVP</th><th>Dietary</th><th>+1</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="guestRows"></tbody>
+        </table>
+      </div>
+      <p id="guestEmpty" class="muted" hidden>No guests yet. Add them one by one, or import a CSV.</p>
+      </div><!-- /guestsPanel -->
+
+      <div id="floorPanel" hidden>
+        <div class="floor-toolbar">
+          <button id="addTableBtn" class="btn btn-primary" type="button">+ Add table</button>
+          <span id="floorStats" class="guest-stats"></span>
+          <span class="zoom-controls">
+            <button id="zoomOut" class="btn btn-ghost" type="button" title="Zoom out">−</button>
+            <span id="zoomLabel">100%</span>
+            <button id="zoomIn" class="btn btn-ghost" type="button" title="Zoom in">+</button>
+            <button id="zoomReset" class="btn btn-ghost" type="button" title="Reset zoom">Fit</button>
+          </span>
+        </div>
+        <div id="floorWarnings" class="floor-warnings" hidden></div>
+        <div class="floor-layout">
+          <aside class="unseated-pane">
+            <div class="unseated-head">
+              <strong>Unseated</strong> <span id="unseatedCount" class="muted"></span>
+            </div>
+            <input id="guestSearch" class="input" type="search" placeholder="Search guests…" />
+            <div class="filter-row">
+              <select id="sideFilter" class="input"></select>
+              <select id="groupFilter" class="input"></select>
+            </div>
+            <div id="unseatedList" class="chip-list" data-drop="unseat"></div>
+          </aside>
+          <div id="floorCanvas" class="floor-canvas">
+            <div id="floorSizer"><div id="floorInner"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- New wedding dialog -->
+  <dialog id="weddingDialog" class="dialog">
+    <form method="dialog" id="weddingForm" class="stack">
+      <h3>New wedding</h3>
+      <label class="field">
+        <span>Name</span>
+        <input id="weddingName" class="input" type="text" placeholder="e.g. Quico &amp; Anna" required />
+      </label>
+      <label class="field">
+        <span>Date (optional)</span>
+        <input id="weddingDate" class="input" type="date" />
+      </label>
+      <div class="dialog-actions">
+        <button type="button" id="cancelWedding" class="btn btn-ghost">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Add/edit guest dialog -->
+  <dialog id="guestDialog" class="dialog">
+    <form method="dialog" id="guestForm" class="stack">
+      <h3 id="guestDialogTitle">Add guest</h3>
+      <input type="hidden" id="guestId" />
+      <label class="field">
+        <span>Name</span>
+        <input id="gName" class="input" type="text" required />
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>Side</span>
+          <input id="gSide" class="input" type="text" placeholder="e.g. Quico / Laura" list="sideList" />
+          <datalist id="sideList"></datalist>
+        </label>
+        <label class="field">
+          <span>Group</span>
+          <input id="gGroup" class="input" type="text" placeholder="e.g. Family, Friends" list="groupList" />
+          <datalist id="groupList"></datalist>
+        </label>
+      </div>
+      <div class="field-row">
+        <label class="field">
+          <span>RSVP</span>
+          <select id="gRsvp" class="input">
+            <option value="pending">Pending</option>
+            <option value="yes">Attending</option>
+            <option value="no">Declined</option>
+            <option value="maybe">Maybe</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Dietary needs</span>
+          <input id="gDietary" class="input" type="text" placeholder="e.g. vegetarian, no gluten" />
+        </label>
+      </div>
+      <div class="checkrow-group">
+        <label class="checkrow">
+          <input id="gPlusOne" type="checkbox" /> <span>Has a plus-one</span>
+        </label>
+        <label class="checkrow">
+          <input id="gChild" type="checkbox" /> <span>Child (kids menu)</span>
+        </label>
+      </div>
+      <label class="field">
+        <span>Notes</span>
+        <textarea id="gNotes" class="input" rows="2"></textarea>
+      </label>
+      <div id="guestLinks" class="guest-links" hidden>
+        <div class="links-block">
+          <span class="links-title">Sits with</span>
+          <div id="togetherList" class="link-chips"></div>
+        </div>
+        <div class="links-block">
+          <span class="links-title">Keep apart from</span>
+          <div id="apartList" class="link-chips"></div>
+        </div>
+        <div class="link-add">
+          <select id="linkGuest" class="input"></select>
+          <button type="button" id="addTogether" class="btn btn-ghost">+ Together</button>
+          <button type="button" id="addApart" class="btn btn-ghost">+ Apart</button>
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button type="button" id="deleteGuestBtn" class="btn btn-ghost danger" hidden>Delete</button>
+        <span style="flex:1"></span>
+        <button type="button" id="cancelGuest" class="btn btn-ghost">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Add/edit table dialog -->
+  <dialog id="tableDialog" class="dialog">
+    <form method="dialog" id="tableForm" class="stack">
+      <h3 id="tableDialogTitle">Add table</h3>
+      <input type="hidden" id="tableId" />
+      <label class="field">
+        <span>Label</span>
+        <input id="tLabel" class="input" type="text" placeholder="e.g. Table 1, Head table" required />
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>Shape</span>
+          <select id="tShape" class="input">
+            <option value="round">Round</option>
+            <option value="long">Long</option>
+            <option value="square">Square</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Seats</span>
+          <input id="tSeats" class="input" type="number" min="1" max="100" value="8" />
+        </label>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" id="deleteTableBtn" class="btn btn-ghost danger" hidden>Delete</button>
+        <span style="flex:1"></span>
+        <button type="button" id="cancelTable" class="btn btn-ghost">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- CSV import dialog -->
+  <dialog id="importDialog" class="dialog dialog-wide">
+    <form method="dialog" id="importForm" class="stack">
+      <h3>Import guests from CSV</h3>
+      <p class="muted">Upload a <code>.csv</code> or paste below. The first row should be column headers (e.g. Name, Group, RSVP, Dietary).</p>
+      <input id="csvFile" class="input" type="file" accept=".csv,text/csv" />
+      <textarea id="csvText" class="input" rows="5" placeholder="…or paste CSV rows here"></textarea>
+      <button type="button" id="parseBtn" class="btn btn-ghost">Preview &amp; map columns</button>
+      <div id="importPreview" class="import-preview" hidden></div>
+      <div class="dialog-actions">
+        <button type="button" id="cancelImport" class="btn btn-ghost">Cancel</button>
+        <button type="button" id="confirmImport" class="btn btn-primary" disabled>Import</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Share / collaborators dialog -->
+  <dialog id="shareDialog" class="dialog">
+    <div class="stack">
+      <h3>Share this wedding</h3>
+      <p class="muted">Invite someone by email. They sign in with their own magic link and can view &amp; edit this wedding. Invite them once — it's permanent.</p>
+      <form id="inviteForm" class="link-add">
+        <input id="inviteEmail" class="input" type="email" placeholder="name@example.com" required />
+        <button class="btn btn-primary" type="submit">Invite</button>
+      </form>
+      <p id="inviteMsg" class="invite-msg" hidden></p>
+      <div id="collabList" class="collab-list"></div>
+      <div class="dialog-actions">
+        <button type="button" id="closeShare" class="btn btn-ghost">Done</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Generic confirm dialog -->
+  <dialog id="confirmDialog" class="dialog">
+    <div class="stack">
+      <p id="confirmMsg" class="confirm-msg"></p>
+      <div class="dialog-actions">
+        <button type="button" id="confirmNo" class="btn btn-ghost">Cancel</button>
+        <button type="button" id="confirmYes" class="btn btn-primary">OK</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Supabase client (CDN, no build step) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
