@@ -899,6 +899,7 @@
   let constraintsCache = [];
   let warnGuestIds = new Set();
   let floorZoom = 1;
+  let selectedGuestId = null; // guest "picked up" via tap (touch-friendly seating)
 
   function guestById(id) {
     return guestCache.find((g) => g.id === id);
@@ -913,6 +914,7 @@
   // tabs
   function showTab(which) {
     const onFloor = which === "floor";
+    selectedGuestId = null; // drop any pending tap-selection when switching views
     $("guestsPanel").hidden = onFloor;
     $("floorPanel").hidden = !onFloor;
     $("tabGuests").classList.toggle("active", !onFloor);
@@ -1090,8 +1092,42 @@
       chip.children[0].textContent = g.name;
       chip.children[1].textContent = g.side || "";
       chip.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/plain", g.id));
+      chip.addEventListener("click", () => setSelectedGuest(selectedGuestId === g.id ? null : g.id));
       list.appendChild(chip);
     });
+    updateSelectionUI();
+  }
+
+  // tap-to-assign selection (touch-friendly: tap a guest, then tap a seat)
+  function setSelectedGuest(id) {
+    selectedGuestId = id;
+    updateSelectionUI();
+  }
+  function updateSelectionUI() {
+    const hint = $("placingHint");
+    const canvas = $("floorCanvas");
+    document.querySelectorAll("#unseatedList .gchip").forEach((c) => {
+      c.classList.toggle("selected", c.dataset.guest === selectedGuestId);
+    });
+    if (selectedGuestId) {
+      const g = guestById(selectedGuestId);
+      hint.innerHTML = "";
+      const span = document.createElement("span");
+      span.textContent = "Placing " + (g ? g.name : "guest") + " — tap a seat";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.className = "link-btn";
+      cancel.textContent = "Cancel";
+      cancel.addEventListener("click", () => setSelectedGuest(null));
+      hint.appendChild(span);
+      hint.appendChild(cancel);
+      hint.hidden = false;
+      canvas.classList.add("placing");
+    } else {
+      hint.hidden = true;
+      hint.innerHTML = "";
+      canvas.classList.remove("placing");
+    }
   }
 
   function computeBounds() {
@@ -1154,7 +1190,7 @@
       cnt.style.opacity = ".8";
       surf.appendChild(lbl);
       surf.appendChild(cnt);
-      surf.addEventListener("mousedown", (e) => startTableDrag(e, table, cont));
+      surf.addEventListener("pointerdown", (e) => startTableDrag(e, table, cont));
       surf.addEventListener("dblclick", () => openTableDialog(table));
       cont.appendChild(surf);
 
@@ -1177,7 +1213,6 @@
           nm.textContent = g ? initials(g.name) : "?";
           seat.appendChild(nm);
           seat.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/plain", a.guest_id));
-          seat.addEventListener("click", (e) => { e.stopPropagation(); if (g) showSeatInfo(g, seat); });
         }
         seat.addEventListener("dragover", (e) => { e.preventDefault(); seat.classList.add("drop-hover"); });
         seat.addEventListener("dragleave", () => seat.classList.remove("drop-hover"));
@@ -1187,6 +1222,18 @@
           const gid = e.dataTransfer.getData("text/plain");
           if (gid) assignSeat(gid, table.id, i);
         });
+        // tap: place the picked-up guest here, or (if occupied) open their info
+        seat.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (selectedGuestId) {
+            const gid = selectedGuestId;
+            setSelectedGuest(null);
+            assignSeat(gid, table.id, i);
+          } else if (a) {
+            const g2 = guestById(a.guest_id);
+            if (g2) showSeatInfo(g2, seat);
+          }
+        });
         cont.appendChild(seat);
       });
       canvas.appendChild(cont);
@@ -1194,27 +1241,33 @@
     applyZoom();
   }
 
-  // --- table dragging (reposition) ---
+  // --- table dragging (reposition) — pointer events so it works with mouse AND touch ---
   function startTableDrag(e, table, cont) {
+    if (e.button != null && e.button > 0) return; // ignore non-primary mouse buttons
     e.preventDefault();
+    const surf = e.currentTarget;
     const startX = e.clientX, startY = e.clientY;
     const origX = table.pos_x || 0, origY = table.pos_y || 0;
-    let nx = origX, ny = origY;
+    let nx = origX, ny = origY, moved = false;
+    try { surf.setPointerCapture(e.pointerId); } catch (_) {}
     const move = (ev) => {
       nx = Math.max(0, origX + (ev.clientX - startX) / floorZoom);
       ny = Math.max(0, origY + (ev.clientY - startY) / floorZoom);
+      if (Math.abs(ev.clientX - startX) > 3 || Math.abs(ev.clientY - startY) > 3) moved = true;
       cont.style.left = nx + "px";
       cont.style.top = ny + "px";
     };
     const up = async () => {
-      document.removeEventListener("mousemove", move);
-      document.removeEventListener("mouseup", up);
-      if (nx === origX && ny === origY) return;
+      surf.removeEventListener("pointermove", move);
+      surf.removeEventListener("pointerup", up);
+      surf.removeEventListener("pointercancel", up);
+      if (!moved) return;
       table.pos_x = nx; table.pos_y = ny;
       await db.from("tables").update({ pos_x: nx, pos_y: ny }).eq("id", table.id);
     };
-    document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", up);
+    surf.addEventListener("pointermove", move);
+    surf.addEventListener("pointerup", up);
+    surf.addEventListener("pointercancel", up);
   }
 
   // --- seat assignment ---
@@ -1297,6 +1350,7 @@
       "<div class='sp-name'></div><div class='sp-meta'></div>" +
       "<div class='sp-tags'></div>" +
       "<div class='sp-actions'>" +
+      "<button class='btn btn-ghost' data-act='move'>Move</button>" +
       "<button class='btn btn-ghost' data-act='edit'>Edit</button>" +
       "<button class='btn btn-ghost danger' data-act='unseat'>Unseat</button></div>";
     pop.querySelector(".sp-name").textContent = g.name;
@@ -1314,6 +1368,7 @@
     pop.style.left = Math.max(8, left) + "px";
     pop.style.top = Math.max(8, top) + "px";
 
+    pop.querySelector("[data-act='move']").addEventListener("click", () => { closeSeatInfo(); setSelectedGuest(g.id); });
     pop.querySelector("[data-act='edit']").addEventListener("click", () => { closeSeatInfo(); openGuestDialog(g); });
     pop.querySelector("[data-act='unseat']").addEventListener("click", () => { closeSeatInfo(); unseat(g.id); });
     seatPopover = pop;

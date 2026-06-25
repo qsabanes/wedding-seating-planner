@@ -261,6 +261,17 @@ body {
 .gchip:active { cursor: grabbing; }
 .gchip .chip-side { font-size: .68rem; color: var(--muted); }
 .gchip.kid { background: #e8e8e8; }
+.gchip.selected { outline: 2px solid var(--ink); outline-offset: 1px; background: #e9e9e9; }
+
+.placing-hint {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 12px; padding: 10px 14px;
+  background: var(--ink); color: #fff; border-radius: 10px; font-size: .9rem;
+  position: sticky; top: 6px; z-index: 5;
+}
+.placing-hint .link-btn { color: #fff; text-decoration: underline; }
+/* when placing, make empty seats obvious tap targets */
+.floor-canvas.placing .fseat:not(.occupied) { outline: 2px dashed var(--ink); outline-offset: -2px; cursor: pointer; }
 
 .floor-canvas {
   position: relative; flex: 1; min-height: 80vh;
@@ -367,6 +378,7 @@ body {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   cursor: move; user-select: none; color: var(--accent);
   font-weight: 700; font-size: .8rem; text-align: center; line-height: 1.2;
+  touch-action: none; /* let pointer-drag work on touch without the canvas panning */
 }
 .ftable-surface.full { background: #1b1b1b; border-color: #1b1b1b; color: #fff; }
 
