@@ -458,7 +458,15 @@
       const pill = tr.querySelector(".pill");
       pill.classList.add(rsvp);
       pill.textContent = RSVP_LABELS[rsvp] || rsvp;
-      tr.querySelector(".c-diet").textContent = g.dietary || "";
+      const diet = tr.querySelector(".c-diet");
+      diet.textContent = g.dietary || "";
+      if (g.dietary) {
+        diet.classList.add("has");
+        const dot = document.createElement("span");
+        dot.className = "diet-dot";
+        dot.title = "Dietary: " + g.dietary;
+        tr.querySelector(".c-name").appendChild(dot);
+      }
       tr.querySelector(".c-plus").textContent = g.plus_one ? "＋1" : "";
       tr.addEventListener("click", () => openGuestDialog(g));
       tbody.appendChild(tr);
@@ -1066,7 +1074,8 @@
     $("unseatedCount").textContent = "(" + unseated.length + ")";
     unseated.forEach((g) => {
       const chip = document.createElement("div");
-      chip.className = "gchip" + (g.is_child ? " kid" : "");
+      chip.className = "gchip" + (g.is_child ? " kid" : "") + (g.dietary ? " diet" : "");
+      if (g.dietary) chip.title = "Dietary: " + g.dietary;
       chip.draggable = true;
       chip.dataset.guest = g.id;
       chip.innerHTML = "<span></span><span class='chip-side'></span>";
@@ -1150,6 +1159,7 @@
         if (a) {
           const g = guestById(a.guest_id);
           seat.classList.add("occupied");
+          if (g && g.dietary) seat.classList.add("diet");
           if (warnGuestIds.has(a.guest_id)) seat.classList.add("warn");
           seat.draggable = true;
           seat.dataset.guest = a.guest_id;

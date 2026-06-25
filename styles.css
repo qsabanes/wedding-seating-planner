@@ -6,6 +6,7 @@
   --accent: #1b1b1b;
   --accent-ink: #ffffff;
   --border: #e3e3e3;
+  --diet: #bf7d1c;          /* the one accent color: flags special dietary needs */
   --shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.05);
   --radius: 14px;
 }
@@ -163,6 +164,16 @@ body {
 .checkrow { display: flex; align-items: center; gap: 8px; font-size: .92rem; }
 .checkrow-group { display: flex; gap: 22px; }
 .kid-tag { font-size: .7rem; font-weight: 600; color: #444; background: #e8e8e8; padding: 1px 7px; border-radius: 999px; margin-left: 6px; }
+
+/* dietary highlight (the single accent color) */
+.diet-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--diet); margin-left: 6px; vertical-align: middle; }
+.guest-table .c-diet.has { color: var(--diet); font-weight: 600; }
+.gchip.diet { border-left: 3px solid var(--diet); }
+.fseat.occupied.diet::after {
+  content: ""; position: absolute; top: 2px; right: 2px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--diet); border: 1.5px solid #fff; box-sizing: border-box;
+}
 .btn.danger { color: #b3274d; }
 
 /* wedding view */
